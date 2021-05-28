@@ -17,15 +17,25 @@ public class Model {
 	PremierLeagueDAO dao;
 	private Graph<Player, DefaultWeightedEdge> grafo;
 	private Map<Integer,Player> idMap;
+	private Player best;
+	private Simulatore sim;
+	private Match match;
+	
+	private int goal1; //squadra di casa
+	private int goal2;
+	private int espulsi1;
+	private int espulsi2;
 
 	public Model() {
 		this.dao = new PremierLeagueDAO();
 		this.idMap = new HashMap<Integer,Player>();
 		this.dao.listAllPlayers(idMap);
+		this.sim=new Simulatore();
 	}
 	
 	public void creaGrafo(Match m) {
 		grafo = new SimpleDirectedWeightedGraph<>(DefaultWeightedEdge.class);
+		this.match=m;
 		
 		//aggiungo i vertici
 		Graphs.addAllVertices(this.grafo, this.dao.getVertici(m, idMap));
@@ -75,12 +85,12 @@ public class Model {
 		return matches;
 	}
 	
-	public GiocatoreMigliore getMigliore() {
+	public Player getMigliore() {
 		if(grafo == null) {
 			return null;
 		}
 		
-		Player best = null;
+		best = null;
 		Double maxDelta = (double) Integer.MIN_VALUE;
 		
 		for(Player p : this.grafo.vertexSet()) {
@@ -103,8 +113,78 @@ public class Model {
 			}
 		}
 		
-		return new GiocatoreMigliore (best,maxDelta);
+		return best;
 		
 	}
+	
+	
+	public void simula(Integer N, Player best) {
+		Team bestTeam = this.dao.getTeam(best);
+		
+		Integer[]results = sim.run(N, bestTeam, match);
+		goal1=results[0]; //squadra di casa
+		goal2=results[1];
+		espulsi1=results[2];
+		espulsi2=results[3];
+		
+	}
+
+	public PremierLeagueDAO getDao() {
+		return dao;
+	}
+
+	public void setDao(PremierLeagueDAO dao) {
+		this.dao = dao;
+	}
+
+	public int getGoal1() {
+		return goal1;
+	}
+
+	public void setGoal1(int goal1) {
+		this.goal1 = goal1;
+	}
+
+	public int getGoal2() {
+		return goal2;
+	}
+
+	public void setGoal2(int goal2) {
+		this.goal2 = goal2;
+	}
+
+	public int getEspulsi1() {
+		return espulsi1;
+	}
+
+	public void setEspulsi1(int espulsi1) {
+		this.espulsi1 = espulsi1;
+	}
+
+	public int getEspulsi2() {
+		return espulsi2;
+	}
+
+	public void setEspulsi2(int espulsi2) {
+		this.espulsi2 = espulsi2;
+	}
+
+	public Map<Integer, Player> getIdMap() {
+		return idMap;
+	}
+
+	public Player getBest() {
+		return best;
+	}
+
+	public Simulatore getSim() {
+		return sim;
+	}
+
+	public Match getMatch() {
+		return match;
+	}
+	
+	
 	
 }

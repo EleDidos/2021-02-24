@@ -76,6 +76,25 @@ public class FXMLController {
     
     @FXML
     void doSimula(ActionEvent event) {
+    	txtResult.clear();
+    	
+    	//passa anche bestTeam
+    	Integer N;
+    	try {
+    		N=Integer.parseInt(txtN.getText());
+    	}catch(NumberFormatException nfe) {
+    		txtResult.appendText("Scegli un N intero");
+    		return ;
+    	}
+    	catch(NullPointerException npe) {
+    		txtResult.appendText("Scegli un N intero");
+    		return ;
+    	}
+    	this.model.simula(N, this.model.getMigliore());
+    	
+    	txtResult.appendText("Il risultato è "+model.getGoal1()+" - "+model.getGoal2()+"\n");
+    	txtResult.appendText("Il numero di espulsi della squadra di casa è: "+model.getEspulsi1()+"\n");
+    	txtResult.appendText("Il numero di espulsi della squadra in trasferta è: "+model.getEspulsi2()+"\n");
 
     }
 
