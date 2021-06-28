@@ -59,13 +59,15 @@ public class Model {
 	
 	
 	public Player getTopPlayer() {
-		double OUT=0.0;
-		double IN=0.0;
+		double OUT;
+		double IN;
 		double delta=0.0;
 		maxDelta=0.0;
 		Player top=null;
 		
 		for(Player p:graph.vertexSet()) {
+			OUT=0.0;
+			IN=0.0;
 			for(DefaultWeightedEdge e: graph.outgoingEdgesOf(p))
 				OUT+=graph.getEdgeWeight(e);
 			for(DefaultWeightedEdge e: graph.incomingEdgesOf(p))
