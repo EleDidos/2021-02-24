@@ -48,53 +48,60 @@ public class FXMLController {
     @FXML
     void doCreaGrafo(ActionEvent event) {
     	txtResult.clear();
-    	Match m = cmbMatch.getValue();
-    	if(m == null) {
-    		txtResult.appendText("Seleziona un match!");
-    		return ;
+    	Match scelta;
+    	
+    	try {
+    		scelta=cmbMatch.getValue();
+    		if(scelta==null) {
+    			txtResult.setText("Scegli un match");
+    			return;
+    		}
+    	}catch(NullPointerException npe) {
+    		txtResult.setText("Scegli un match");
+    		return;
     	}
     	
-    	this.model.creaGrafo(m);
+    	model.creaGrafo(scelta);
+    	txtResult.appendText("Caratteristiche del grafo:\n#VERTICI = "+model.getNVertici()+"\n#ARCHI = "+model.getNArchi());
     	
-    	txtResult.appendText("GRAFO CREATO\n");
-    	txtResult.appendText("# VERTICI: " + this.model.nVertici() + "\n");
-    	txtResult.appendText("# ARCHI: " + this.model.nArchi() + "\n");
+    	
 
     }
 
     @FXML
     void doGiocatoreMigliore(ActionEvent event) {    	
-    	txtResult.clear();
-    	
-    	if(this.model.getGrafo() == null) {
-    		txtResult.appendText("Crea prima il grafo!");
-    		return ;
+    	//CONTROLLA SE ESISTE GRAFO
+    	if(model.getGraph()==null) {
+    		txtResult.setText("Devi prima creare il grafo!");
+    		return;
     	}
-    	
-    	txtResult.appendText("GIOCATORE MIGLIORE:\n" + this.model.getMigliore());
+    	txtResult.appendText("\n\nIl TOP player è:\n "+model.getTopPlayer()+", delta efficienza "+model.getDeltaTop());
     }
     
     @FXML
     void doSimula(ActionEvent event) {
-    	txtResult.clear();
+    	//CONTROLLA SE ESISTE GRAFO
+    	if(model.getGraph()==null) {
+    		txtResult.setText("Devi prima creare il grafo!");
+    		return;
+    	}
+    	Integer N=0;
     	
-    	//passa anche bestTeam
-    	Integer N;
     	try {
     		N=Integer.parseInt(txtN.getText());
+    		
     	}catch(NumberFormatException nfe) {
-    		txtResult.appendText("Scegli un N intero");
-    		return ;
+    		txtResult.setText("Inserisci un numero intero di azioni salienti");
+    		return;
+    	}catch(NullPointerException npe) {
+    		txtResult.setText("Inserisci un numero intero di azioni salienti");
+    		return;
     	}
-    	catch(NullPointerException npe) {
-    		txtResult.appendText("Scegli un N intero");
-    		return ;
-    	}
-    	this.model.simula(N, this.model.getMigliore());
     	
-    	txtResult.appendText("Il risultato è "+model.getGoal1()+" - "+model.getGoal2()+"\n");
-    	txtResult.appendText("Il numero di espulsi della squadra di casa è: "+model.getEspulsi1()+"\n");
-    	txtResult.appendText("Il numero di espulsi della squadra in trasferta è: "+model.getEspulsi2()+"\n");
+    	model.simula(N);
+    	
+    	txtResult.appendText("\n\nIl risultato finale della simualazione è: "+model.getResult());
+    	txtResult.appendText("\n"+model.getEspulsi());
 
     }
 
@@ -111,6 +118,6 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
-    	this.cmbMatch.getItems().addAll(model.getTuttiMatch());
+    	cmbMatch.getItems().addAll(model.getMatches());
     }
 }

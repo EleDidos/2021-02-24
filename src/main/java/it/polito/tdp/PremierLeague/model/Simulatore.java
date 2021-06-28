@@ -1,127 +1,155 @@
 package it.polito.tdp.PremierLeague.model;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 
-import it.polito.tdp.PremierLeague.model.Evento.EventType;
-import javafx.event.Event;
+import org.jgrapht.graph.DefaultWeightedEdge;
+import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 
-public class Simulatore {
+import it.polito.tdp.PremierLeague.model.Event.EventType;
 
-	//private PriorityQueue <Evento> queue;
-	private List <Evento> queue;
+public class Simulatore { 
 	
-	//VARIABILI
-	private int N;
-	private double probability;
-	private Team bestTeam;
+	private PriorityQueue<Event> queue;
+	private SimpleDirectedWeightedGraph<Player, DefaultWeightedEdge>graph;
+	private Player top;
+	private Team topTeam;
+	private Integer N; //azioni
 	private Match match;
-	
-	//OUTPUT
-	private int goal1; //squadra di casa
+	private Team t1;
+	private Team t2;
+	private Map <Integer,  Team > teams;
+	private int goal1;
 	private int goal2;
 	private int espulsi1;
 	private int espulsi2;
+	private int numeroEventi;
 	
-	//SIMULAZIONE
-	public Integer[] run(int N, Team bestTeam, Match match) {
-		this.N=N; //numero di azioni che generano eventi 
-		//this.queue= new PriorityQueue<Evento>();
-		this.queue=new ArrayList <Evento>();
+	public Simulatore( SimpleDirectedWeightedGraph<Player, DefaultWeightedEdge>graph, Integer N, Player top, Match match,Map <Integer,  Team > teams) {
+		queue = new PriorityQueue<Event> ();
+		this.graph=graph;
+		this.match=match;
+		this.top=top;
+		this.teams=teams;
+		this.N=N;
 		goal1=0;
 		goal2=0;
 		espulsi1=0;
 		espulsi2=0;
-		this.bestTeam=bestTeam;
-		this.match=match;
+		numeroEventi=0;
 		
-		for(int i=0;i<N;i++) {
-			this.addEvento(); //inserisco le N azioni salienti in coda
-		}//for
+		t1= teams.get(match.getTeamHomeID()) ;
+		t2= teams.get(match.getTeamAwayID());
 		
-		//while(!this.queue.isEmpty()) {
-			//Evento e = this.queue.poll();
-		int i=0;
-		while(queue.get(i)!=null) {
-			Evento e = queue.get(i);
-			processEvent (e);
-			i++;
-		}
-		
-		Integer[] results = new Integer[4];
-		results[0] = goal1;
-		results[1] = goal2;
-		results[2] = espulsi1;
-		results[3] = espulsi2;
-		return results;
-	}
-	
-	/**
-	 * Inserisce AZIONI SALIENTI che generano eventi
-	 */
-	public void addEvento () {
-		probability = Math.random();
-		if(probability<=0.5)
-			queue.add(new Evento(EventType.GOAL));
-		else if(probability>0.5 && probability<=0.8)
-			queue.add(new Evento(EventType.ESPULSIONE));
+		if(top.getTeamID()==t1.getTeamID())
+			topTeam=t1;
 		else
-			queue.add(new Evento(EventType.INFORTUNIO));
-		System.out.println(queue.get(queue.size()-1));
-	}
-
+			topTeam=t2;
+		
+		//creo N azioni salienti
+		for(int i=0;i<N;i++)
+			this.creaEvento(i);;
 	
-	private void processEvent(Evento e) {
-		switch (e.getType()) {
-			case GOAL:
-				//stesso n°players --> goal a squadra con best
-				if(espulsi1== espulsi2) {
-					if(bestTeam.getTeamID()==match.getTeamHomeID())
-						goal1++;
-					else
-						goal2++;
-				} else { //goal al team con meno espulsi
-					if(espulsi1>espulsi2)
-						goal2++;
-					else
-						goal1++;
-				}
-				break;
-				
-			case ESPULSIONE:
-				double prob = Math.random();
-				if (prob<=0.6) { //coinvolge teamBest
-					if(bestTeam.getTeamID()==match.getTeamHomeID())
-						espulsi1++;
-					else
-						espulsi2++;
-				} else { //coinvolge squadra senza best
-					if(bestTeam.getTeamID()==match.getTeamHomeID())
-						espulsi2++;
-					else
-						espulsi1++;
-				}
-				break;
-				
-			case INFORTUNIO:
-				double prob2 = Math.random();
-				if(prob2<=0.5) {
-					this.addEvento();
-					this.addEvento();
-					N+=2;
-				} else {
-					this.addEvento();
-					this.addEvento();
-					this.addEvento();
-					N+=3;
-				}
-						
-				
-		}//switch
 		
 	}
+		
 	
+	public void creaEvento(Integer id) {
+		double prob=Math.random();
+		Event e;
+		if(prob<=0.5)
+			e = new Event(id,EventType.GOAL);
+		else if(prob>0.5 & prob<=0.8)
+			e= new Event(id,EventType.ESPULSIONE);
+		else
+			e = new Event(id,EventType.INFORTUNIO);
+		
+		queue.add(e);
+		numeroEventi++;
+	}
+	
+	
+	public void run() {
+		while(!queue.isEmpty()) {
+			Event e = this.queue.poll();
+			processEvent(e);
+		}//while
+	}
+	
+	
+	private void processEvent(Event e) {
+		switch(e.getType()) {
+				
+			case GOAL:
+				
+				if(t1.getNGiocatori()>t2.getNGiocatori()) {
+					goal1++;
+					
+				}else if(t2.getNGiocatori()>t1.getNGiocatori()) {
+					goal2++;
+					
+				}else { //goal alla squadra del top
+					if(t1.equals(topTeam))
+						goal1++;
+					else
+						goal2++;
+				}
+				
+				
+				break;
+				
+				
+			case ESPULSIONE: 
+				
+				double prob2=Math.random();
+				
+				if(prob2<=0.6) {
+					//espello da topTeam
+					if(t1.equals(topTeam)) {
+						espulsi1++;
+						t1.minusGiocatore();
+					}else {
+						espulsi2++;
+						t2.minusGiocatore();
+					}
+				}
+				else { //espello dall'altra squadra
+					if(t1.equals(topTeam)) {
+						espulsi2++;
+						t2.minusGiocatore();
+					}else {
+						espulsi1++;
+						t1.minusGiocatore();
+					}
+					
+				}
+				break;
+				
+				
+			case INFORTUNIO: //aggiungo azioni 
+				double prob3= Math.random();
+				if(prob3<=0.5) {
+					this.creaEvento(this.numeroEventi+1); //indice della nuova azione = l'ultimo+1
+					this.creaEvento(this.numeroEventi+1);
+				}else {
+					this.creaEvento(this.numeroEventi+1);
+					this.creaEvento(this.numeroEventi+1);
+					this.creaEvento(this.numeroEventi+1);
+				}
+				break;
+				
+			default:
+				break;
+		}
+	}
+	
+	public String getResult() {
+		return goal1+" - "+goal2;
+	}
+	
+	public String getEspulsi() {
+		return "Espulsi dalla squadra 1: "+espulsi1+"\nEspulsi dalla squadra 2: "+espulsi2;
+	}
+	
+
 }
